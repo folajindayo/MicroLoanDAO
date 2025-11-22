@@ -15,20 +15,20 @@ model User {
 
 model Loan {
   id             String   @id @default(uuid())
-  contractLoanId Int? // ID in the smart contract
+  contractLoanId Int?
   borrower       User     @relation("Borrower", fields: [borrowerAddress], references: [address])
   borrowerAddress String
   lender         User?    @relation("Lender", fields: [lenderAddress], references: [address])
   lenderAddress   String?
-  amount         String // Stored as string to handle big integers/wei
+  amount         String
+  interestRate   Int // Basis points (100 = 1%)
   purpose        String
-  duration       Int // In seconds
+  duration       Int
   status         String // REQUESTED, FUNDED, REPAID, DEFAULTED
   createdAt      DateTime @default(now())
   fundedAt       DateTime?
   repaidAt       DateTime?
   
-  // Transaction hashes for verification
   creationTx     String?
   fundingTx      String?
   repaymentTx    String?
