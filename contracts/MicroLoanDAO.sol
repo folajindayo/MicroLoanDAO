@@ -67,10 +67,17 @@ contract MicroLoanDAO {
     function repayLoan(uint256 _id) external payable {
         Loan storage loan = loans[_id];
         require(loan.status == LoanStatus.FUNDED, "Loan is not active");
-        require(msg.sender == loan.borrower, "Only borrower can repay");
+        // Removed strict check to allow anyone to repay (e.g., user using a different wallet or script)
+        // require(msg.sender == loan.borrower, "Only borrower can repay");
 
         uint256 interest = (loan.amount * loan.interestRate) / 10000;
         uint256 totalRepayment = loan.amount + interest;
+
+        // Late Fee Logic: 5% flat penalty if late
+        if (block.timestamp > loan.fundedAt + loan.duration) {
+            uint256 lateFee = (loan.amount * 500) / 10000; // 5%
+            totalRepayment += lateFee;
+        }
 
         require(msg.value >= totalRepayment, "Insufficient repayment amount");
 
@@ -79,6 +86,12 @@ contract MicroLoanDAO {
 
         (bool success, ) = loan.lender.call{value: msg.value}("");
         require(success, "Transfer to lender failed");
+
+        // Refund excess
+        if (msg.value > totalRepayment) {
+            (bool refundSuccess, ) = msg.sender.call{value: msg.value - totalRepayment}("");
+            require(refundSuccess, "Refund failed");
+        }
 
         emit LoanRepaid(_id, block.timestamp, msg.value);
     }
