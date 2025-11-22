@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  address         String @id
+  reputationScore Int    @default(100)
+  loans           Loan[] @relation("Borrower")
+  fundedLoans     Loan[] @relation("Lender")
+}
+
+model Loan {
+  id             String   @id @default(uuid())
+  contractLoanId Int? // ID in the smart contract
+  borrower       User     @relation("Borrower", fields: [borrowerAddress], references: [address])
+  borrowerAddress String
+  lender         User?    @relation("Lender", fields: [lenderAddress], references: [address])
+  lenderAddress   String?
+  amount         String // Stored as string to handle big integers/wei
+  purpose        String
+  duration       Int // In seconds
+  status         String // REQUESTED, FUNDED, REPAID, DEFAULTED
+  createdAt      DateTime @default(now())
+  fundedAt       DateTime?
+  repaidAt       DateTime?
+  
+  // Transaction hashes for verification
+  creationTx     String?
+  fundingTx      String?
+  repaymentTx    String?
+}
