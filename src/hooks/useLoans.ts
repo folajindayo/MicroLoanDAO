@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
+import { Loan } from '@/types'
 
 export function useLoans() {
-  const [loans, setLoans] = useState<any[]>([])
+  const [loans, setLoans] = useState<Loan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
