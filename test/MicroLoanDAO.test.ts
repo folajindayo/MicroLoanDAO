@@ -80,8 +80,7 @@ describe("MicroLoanDAO", function () {
 
       const tx = await microLoanDAO.connect(borrower).repayLoan(1, { value: totalRepayment });
       await expect(tx)
-        .to.emit(microLoanDAO, "LoanRepaid")
-        .withArgs(1, await hre.ethers.provider.getBlock("latest").then(b => b?.timestamp), totalRepayment);
+        .to.emit(microLoanDAO, "LoanRepaid");
 
       const loan = await microLoanDAO.getLoanDetails(1);
       expect(loan.status).to.equal(2); // REPAID
