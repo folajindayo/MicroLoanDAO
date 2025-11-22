@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
 import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
+import { Loan } from '@/types'
 
 export function useRepayLoan() {
   const [repayingLoanId, setRepayingLoanId] = useState<string | null>(null)
   const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
   const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
-  const repayLoan = (loan: any) => {
+  const repayLoan = (loan: Loan) => {
       if (!loan.contractLoanId) {
           alert("Contract Loan ID missing")
           return
