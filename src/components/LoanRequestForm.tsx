@@ -15,18 +15,22 @@ export default function LoanRequestForm() {
 
   const [amount, setAmount] = useState('')
   const [duration, setDuration] = useState('')
+  const [interestRate, setInterestRate] = useState('')
   const [purpose, setPurpose] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!address || !amount || !duration || !purpose) return
+    if (!address || !amount || !duration || !interestRate || !purpose) return
 
     // Call smart contract
+    // Interest rate is in basis points (e.g. 500 = 5%)
+    const rateBps = Number(interestRate) * 100
+
     writeContract({
       address: MICROLOAN_CONTRACT_ADDRESS as `0x${string}`,
       abi: MicroLoanDAOABI,
       functionName: 'createLoan',
-      args: [parseEther(amount), BigInt(Number(duration) * 24 * 60 * 60), purpose], // Duration in days to seconds
+      args: [parseEther(amount), BigInt(Number(duration) * 24 * 60 * 60), BigInt(rateBps), purpose], 
     })
   }
 
@@ -51,6 +55,8 @@ export default function LoanRequestForm() {
               }
           }
 
+         const rateBps = Number(interestRate) * 100;
+
          fetch('/api/loans/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -59,17 +65,19 @@ export default function LoanRequestForm() {
                 amount: parseEther(amount).toString(),
                 purpose,
                 duration: Number(duration) * 24 * 60 * 60,
+                interestRate: rateBps,
                 creationTx: hash,
-                contractLoanId: loanId // Add this to the API
+                contractLoanId: loanId
             })
          }).then(() => {
              setAmount('')
              setDuration('')
+             setInterestRate('')
              setPurpose('')
              console.log('Synced to DB with ID:', loanId)
          })
       }
-  }, [isConfirmed, receipt, hash, address, amount, duration, purpose])
+  }, [isConfirmed, receipt, hash, address, amount, duration, interestRate, purpose])
 
   return (
     <div className="p-4 border rounded-lg shadow bg-white dark:bg-gray-800">
@@ -95,6 +103,17 @@ export default function LoanRequestForm() {
             onChange={(e) => setDuration(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border text-gray-900"
             placeholder="30"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest Rate (%)</label>
+          <input
+            type="number"
+            value={interestRate}
+            onChange={(e) => setInterestRate(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border text-gray-900"
+            placeholder="5"
             required
           />
         </div>
