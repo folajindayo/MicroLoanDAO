@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, decodeEventLog } from 'viem'
 import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
@@ -42,11 +42,11 @@ export default function LoanRequestForm() {
                       topics: log.topics
                   })
                   if (decoded.eventName === 'LoanCreated') {
-                      // @ts-ignore
+                      // @ts-expect-error args type is generic
                       loanId = Number(decoded.args.id);
                       break;
                   }
-              } catch (e) {
+              } catch {
                   // Ignore logs that don't match
               }
           }
