@@ -1,38 +1,23 @@
 import { useState, useEffect } from 'react'
 
-interface Loan {
-  id: string
-  contractLoanId: number | null
-  borrowerAddress: string
-  amount: string
-  purpose: string
-  duration: number
-  status: string
-  createdAt: string
-}
-
 export function useLoans() {
-  const [loans, setLoans] = useState<Loan[]>([])
+  const [loans, setLoans] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  const fetchLoans = async () => {
-    try {
-        setIsLoading(true)
-        const res = await fetch('/api/loans')
-        const data = await res.json()
-        setLoans(data)
-    } catch (err) {
-        setError(err as Error)
-    } finally {
-        setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchLoans()
+    setIsLoading(true)
+    fetch('/api/loans')
+      .then(res => res.json())
+      .then(data => {
+          setLoans(data)
+          setIsLoading(false)
+      })
+      .catch(err => {
+          setError(err)
+          setIsLoading(false)
+      })
   }, [])
 
-  return { loans, isLoading, error, refetch: fetchLoans }
+  return { loans, isLoading, error }
 }
-
