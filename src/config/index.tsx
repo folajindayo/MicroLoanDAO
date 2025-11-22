@@ -1,13 +1,9 @@
-import { cookieStorage, createStorage, http } from 'wagmi'
+import { cookieStorage, createStorage } from 'wagmi'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { mainnet, arbitrum, sepolia, hardhat } from '@reown/appkit/networks'
+import { getProjectId } from '@/lib/env'
 
-// Get projectId from https://cloud.reown.com
-export const projectId = process.env.NEXT_PUBLIC_PROJECT_ID || 'b56e18d47c72ab683b10814fe9495694'
-
-if (!projectId) {
-  throw new Error('Project ID is not defined')
-}
+export const projectId = getProjectId()
 
 export const networks = [mainnet, arbitrum, sepolia, hardhat]
 
@@ -21,5 +17,3 @@ export const wagmiAdapter = new WagmiAdapter({
 })
 
 export const config = wagmiAdapter.wagmiConfig
-
-export const MICROLOAN_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3'
