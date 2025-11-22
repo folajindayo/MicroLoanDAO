@@ -1,36 +1,27 @@
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 
-interface UserProfile {
-    reputationScore: number
-    loans: any[]
-    fundedLoans: any[]
-}
-
 export function useUserHistory() {
   const { address } = useAccount()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
-  const fetchHistory = async () => {
-    if (!address) return
-    try {
-        setIsLoading(true)
-        const res = await fetch(`/api/history?address=${address}`)
-        const data = await res.json()
-        setProfile(data)
-    } catch (err) {
-        setError(err as Error)
-    } finally {
-        setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchHistory()
+    if (address) {
+      setIsLoading(true)
+      fetch(`/api/history?address=${address}`)
+        .then(res => res.json())
+        .then(data => {
+            setProfile(data)
+            setIsLoading(false)
+        })
+        .catch(err => {
+            setError(err)
+            setIsLoading(false)
+        })
+    }
   }, [address])
 
-  return { profile, isLoading, error, refetch: fetchHistory }
+  return { profile, isLoading, error }
 }
-
