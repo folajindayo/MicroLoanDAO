@@ -5,7 +5,10 @@ export interface Loan {
   amount: string
   purpose: string
   duration: number
-  status: string
   interestRate?: number
-  createdAt?: string
+  status: string
+  createdAt: string
+  lenderAddress?: string | null
+  fundedAt?: string | null
+  repaidAt?: string | null
 }
