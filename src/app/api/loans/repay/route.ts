@@ -1,14 +1,17 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { repayLoanSchema } from '@/lib/validation';
+import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { loanId, repaymentTx } = body;
+    const result = repayLoanSchema.safeParse(body);
 
-    if (!loanId || !repaymentTx) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!result.success) {
+      return errorResponse(result.error.message, 400);
     }
+
+    const { loanId, repaymentTx } = result.data;
 
     const loan = await prisma.loan.findUnique({
       where: { id: loanId },
@@ -16,14 +19,9 @@ export async function POST(request: Request) {
     });
 
     if (!loan) {
-      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+      return errorResponse('Loan not found', 404);
     }
 
-    // Calculate reputation impact
-    // Simple logic: if repaid, +10 points. 
-    // (Real logic would check if on time).
-    // Assuming repaidAt is now.
-    
     const now = new Date();
     const wasLate = loan.fundedAt && (now.getTime() > loan.fundedAt.getTime() + loan.duration * 1000);
     const pointsChange = wasLate ? -5 : 10;
@@ -45,10 +43,9 @@ export async function POST(request: Request) {
       include: { borrower: true }
     });
 
-    return NextResponse.json(updatedLoan);
+    return successResponse(updatedLoan);
   } catch (error) {
     console.error('Error repaying loan:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return errorResponse('Internal Server Error');
   }
 }
-
