@@ -1,12 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { formatEther } from 'viem'
+import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
+import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
 
 export default function Dashboard() {
   const { address } = useAccount()
   const [profile, setProfile] = useState<any>(null)
+  const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
+  const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
+  const [repayingLoanId, setRepayingLoanId] = useState<string | null>(null)
 
   useEffect(() => {
     if (address) {
@@ -14,7 +19,39 @@ export default function Dashboard() {
         .then(res => res.json())
         .then(data => setProfile(data))
     }
-  }, [address])
+  }, [address, isConfirmed])
+
+  // Sync repayment to DB
+  useEffect(() => {
+      if (isConfirmed && repayingLoanId && hash) {
+          fetch('/api/loans/repay', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  loanId: repayingLoanId,
+                  repaymentTx: hash
+              })
+          }).then(() => {
+              setRepayingLoanId(null)
+              // Refresh profile handled by dependency on isConfirmed
+          })
+      }
+  }, [isConfirmed, repayingLoanId, hash])
+
+  const handleRepay = async (loan: any) => {
+      if (!loan.contractLoanId) {
+          alert("Contract Loan ID missing")
+          return
+      }
+      setRepayingLoanId(loan.id)
+      writeContract({
+          address: MICROLOAN_CONTRACT_ADDRESS as `0x${string}`,
+          abi: MicroLoanDAOABI,
+          functionName: 'repayLoan',
+          args: [BigInt(loan.contractLoanId)],
+          value: BigInt(loan.amount)
+      })
+  }
 
   if (!address) return <div>Please connect wallet to see dashboard</div>
   if (!profile) return <div>Loading...</div>
@@ -42,7 +79,18 @@ export default function Dashboard() {
                                 <span className="text-gray-700 dark:text-gray-300">{loan.purpose}</span>
                                 <span className="text-gray-900 dark:text-white font-medium">{formatEther(BigInt(loan.amount))} ETH</span>
                             </div>
-                            <p className="text-sm text-gray-500">Status: {loan.status}</p>
+                            <div className="flex justify-between items-center mt-2">
+                                <p className="text-sm text-gray-500">Status: {loan.status}</p>
+                                {loan.status === 'FUNDED' && (
+                                    <button 
+                                        onClick={() => handleRepay(loan)}
+                                        disabled={isWritePending}
+                                        className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        {isWritePending && repayingLoanId === loan.id ? 'Processing...' : 'Repay'}
+                                    </button>
+                                )}
+                            </div>
                         </li>
                     ))}
                 </ul>
@@ -71,4 +119,3 @@ export default function Dashboard() {
     </div>
   )
 }
-
