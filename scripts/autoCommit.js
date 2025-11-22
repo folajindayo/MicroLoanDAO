@@ -1,3 +1,4 @@
+/* eslint-disable */
 const chokidar = require('chokidar');
 const { exec } = require('child_process');
 
@@ -18,4 +19,3 @@ watcher.on('change', path => {
     }
   });
 });
-
