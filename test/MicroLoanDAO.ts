@@ -1,7 +1,6 @@
-import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import hre from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("MicroLoanDAO", function () {
   async function deployMicroLoanDAOFixture() {
