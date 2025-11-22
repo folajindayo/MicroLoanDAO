@@ -78,7 +78,8 @@ describe("MicroLoanDAO", function () {
       const interest = (amount * BigInt(interestRate)) / 10000n;
       const totalRepayment = amount + interest;
 
-      await expect(microLoanDAO.connect(borrower).repayLoan(1, { value: totalRepayment }))
+      const tx = await microLoanDAO.connect(borrower).repayLoan(1, { value: totalRepayment });
+      await expect(tx)
         .to.emit(microLoanDAO, "LoanRepaid")
         .withArgs(1, await hre.ethers.provider.getBlock("latest").then(b => b?.timestamp), totalRepayment);
 
