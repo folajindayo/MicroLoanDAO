@@ -11,6 +11,7 @@ interface Loan {
     contractLoanId: number | null
     borrowerAddress: string
     amount: string
+    interestRate: number
     purpose: string
     duration: number
     status: string
@@ -59,13 +60,18 @@ export default function Dashboard() {
           alert("Contract Loan ID missing")
           return
       }
+      
+      const principal = BigInt(loan.amount)
+      const interest = (principal * BigInt(loan.interestRate)) / 10000n
+      const totalRepayment = principal + interest
+
       setRepayingLoanId(loan.id)
       writeContract({
           address: MICROLOAN_CONTRACT_ADDRESS as `0x${string}`,
           abi: MicroLoanDAOABI,
           functionName: 'repayLoan',
           args: [BigInt(loan.contractLoanId)],
-          value: BigInt(loan.amount)
+          value: totalRepayment
       })
   }
 
@@ -97,6 +103,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex justify-between items-center mt-2">
                                 <p className="text-sm text-gray-500">Status: {loan.status}</p>
+                                <p className="text-xs text-gray-400">Rate: {loan.interestRate / 100}%</p>
                                 {loan.status === 'FUNDED' && (
                                     <button 
                                         onClick={() => handleRepay(loan)}
@@ -125,7 +132,10 @@ export default function Dashboard() {
                                 <span className="text-gray-700 dark:text-gray-300">{loan.purpose}</span>
                                 <span className="text-gray-900 dark:text-white font-medium">{formatEther(BigInt(loan.amount))} ETH</span>
                             </div>
-                            <p className="text-sm text-gray-500">Borrower: {loan.borrowerAddress}</p>
+                            <div className="flex justify-between items-center mt-1">
+                                <p className="text-sm text-gray-500">Borrower: {loan.borrowerAddress}</p>
+                                <p className="text-xs text-gray-400">Rate: {loan.interestRate / 100}%</p>
+                            </div>
                         </li>
                     ))}
                 </ul>
