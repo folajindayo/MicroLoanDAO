@@ -1,14 +1,17 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { fundLoanSchema } from '@/lib/validation';
+import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { loanId, lenderAddress, fundingTx } = body;
+    const result = fundLoanSchema.safeParse(body);
 
-    if (!loanId || !lenderAddress || !fundingTx) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!result.success) {
+      return errorResponse(result.error.message, 400);
     }
+
+    const { loanId, lenderAddress, fundingTx } = result.data;
 
     // Create or update lender
     await prisma.user.upsert({
@@ -27,10 +30,9 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(loan);
+    return successResponse(loan);
   } catch (error) {
     console.error('Error funding loan:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return errorResponse('Internal Server Error');
   }
 }
-
