@@ -1,36 +1,29 @@
 'use client'
 
-import { wagmiAdapter, projectId } from '@/config'
+import { wagmiAdapter, projectId, networks } from '@/config'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit } from '@reown/appkit/react'
-import { mainnet, arbitrum, sepolia, hardhat } from '@reown/appkit/networks'
+import { hardhat } from '@reown/appkit/networks'
 import React, { type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
 
-// Set up queryClient
 const queryClient = new QueryClient()
 
-if (!projectId) {
-  throw new Error('Project ID is not defined')
-}
-
-// Set up metadata
 const metadata = {
   name: 'MicroLoan DAO',
   description: 'Decentralized Microloans',
-  url: 'https://microloan-dao.com', // origin must match your domain & subdomain
+  url: 'https://microloan-dao.com',
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }
 
-// Create the modal
 createAppKit({
   adapters: [wagmiAdapter],
   projectId,
-  networks: [mainnet, arbitrum, sepolia, hardhat],
-  defaultNetwork: hardhat, // Default to hardhat for local dev
+  networks,
+  defaultNetwork: hardhat,
   metadata: metadata,
   features: {
-    analytics: true // Optional - defaults to your Cloud configuration
+    analytics: true
   }
 })
 
