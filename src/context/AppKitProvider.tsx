@@ -3,7 +3,7 @@
 import { wagmiAdapter, projectId } from '@/config'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit } from '@reown/appkit/react'
-import { mainnet, arbitrum, sepolia } from '@reown/appkit/networks'
+import { mainnet, arbitrum, sepolia, hardhat } from '@reown/appkit/networks'
 import React, { type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
 
@@ -26,8 +26,8 @@ const metadata = {
 createAppKit({
   adapters: [wagmiAdapter],
   projectId,
-  networks: [mainnet, arbitrum, sepolia],
-  defaultNetwork: sepolia,
+  networks: [mainnet, arbitrum, sepolia, hardhat],
+  defaultNetwork: hardhat, // Default to hardhat for local dev
   metadata: metadata,
   features: {
     analytics: true // Optional - defaults to your Cloud configuration
@@ -43,4 +43,3 @@ export default function AppKitProvider({ children, cookies }: { children: ReactN
     </WagmiProvider>
   )
 }
-
