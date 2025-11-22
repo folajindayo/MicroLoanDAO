@@ -8,7 +8,7 @@ import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
 
 interface Loan {
   id: string
-  contractLoanId: number | null // In a real app, we map this. For MVP we assume 1-to-1 mapping if created sequentially or store it.
+  contractLoanId: number | null
   borrowerAddress: string
   amount: string
   purpose: string
@@ -17,45 +17,44 @@ interface Loan {
   createdAt: string
 }
 
-// NOTE: For MVP, we assume API returns loans. To fund, we need the On-Chain ID.
-// In the create API, we should have stored the on-chain ID. 
-// Since we didn't get the event return value in the generic 'writeContract', we might rely on 'contractLoanId' being set later via an indexer or assuming an incremental ID logic if we were syncing properly.
-// For this demo, I'll assume the API returns 'contractLoanId' OR we use the 'id' if we can map it.
-// Actually, the Smart Contract 'loanCount' is incremental. We could query events to find the ID.
-// But to keep it simple, I will pass the index as the ID if I can, or just use the loop index if list is consistent.
-// Better: Update API to accept 'contractLoanId' from the frontend after receipt.
-// I'll update LoanRequestForm to fetch the event logs from receipt to get the ID, OR just trust the user to pass it (risky), OR just use a simple counter if we assume we are the only UI.
-// Let's use the 'loanCount' from contract for robustness? No, that's race-condition prone.
-// I will parse the logs in LoanRequestForm to get the ID.
-
 export default function LoanList() {
   const { address } = useAccount()
   const [loans, setLoans] = useState<Loan[]>([])
-  const { writeContract, data: hash } = useWriteContract()
+  const [fundingLoanId, setFundingLoanId] = useState<string | null>(null)
+  const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
   const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
   useEffect(() => {
     fetch('/api/loans')
       .then(res => res.json())
       .then(data => setLoans(data))
-  }, [isConfirmed]) // Refresh on fund success
+  }, [isConfirmed]) 
+
+  // Sync funding to DB
+  useEffect(() => {
+    if (isConfirmed && fundingLoanId && hash && address) {
+        fetch('/api/loans/fund', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                loanId: fundingLoanId,
+                lenderAddress: address,
+                fundingTx: hash
+            })
+        }).then(() => {
+            console.log('Funding synced')
+            setFundingLoanId(null)
+        })
+    }
+  }, [isConfirmed, fundingLoanId, hash, address])
 
   const handleFund = async (loan: Loan) => {
-     // We need the numeric ID from the contract.
-     // Since we didn't store it reliably in the CREATE step (we just passed hash), 
-     // we might need to fetch it or guess.
-     // For MVP, let's assume the `contractLoanId` field is populated via a separate process or we just use the array index + 1 if we resync.
-     // Or better: update the API to update the loan with the ID.
-     // I'll just assume `contractLoanId` is present, or use a placeholder logic for now.
-     // Actually, the smart contract ID is needed.
-     // I'll update `createLoan` logic in `LoanRequestForm` to parse logs.
-     
-     // For now, I'll alert if contractLoanId is missing.
      if (!loan.contractLoanId) {
          alert("Loan ID not synced with contract yet.")
          return
      }
      
+    setFundingLoanId(loan.id)
     writeContract({
       address: MICROLOAN_CONTRACT_ADDRESS as `0x${string}`,
       abi: MicroLoanDAOABI,
@@ -64,13 +63,11 @@ export default function LoanList() {
       value: BigInt(loan.amount)
     })
   }
-
-  // Sync funding to DB
-  // This would ideally be in a useEffect watching 'isConfirmed' and 'hash'
   
   return (
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Active Loan Requests</h2>
+      {loans.length === 0 && <p className="text-gray-500">No active requests.</p>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {loans.map((loan) => (
           <div key={loan.id} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border p-4">
@@ -91,9 +88,10 @@ export default function LoanList() {
               {loan.status === 'REQUESTED' && address && loan.borrowerAddress !== address && (
                   <button
                     onClick={() => handleFund(loan)}
-                    className="mt-4 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    disabled={isWritePending}
+                    className="mt-4 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                   >
-                    Fund Loan
+                    {isWritePending && fundingLoanId === loan.id ? 'Processing...' : 'Fund Loan'}
                   </button>
               )}
             </div>
@@ -103,4 +101,3 @@ export default function LoanList() {
     </div>
   )
 }
-
