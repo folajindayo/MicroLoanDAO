@@ -1,12 +1,11 @@
 import { formatEther } from 'viem'
-import { Loan } from '@/types'
 
 interface FundedHistoryProps {
-  loans: Loan[]
+  loans: any[];
 }
 
 export default function FundedHistory({ loans }: FundedHistoryProps) {
-  if (!loans || loans.length === 0) {
+  if (loans.length === 0) {
     return <p className="text-gray-500 dark:text-gray-400">No loans funded yet.</p>
   }
 
@@ -22,5 +21,5 @@ export default function FundedHistory({ loans }: FundedHistoryProps) {
         </li>
       ))}
     </ul>
-  )
+  );
 }
