@@ -1,14 +1,17 @@
 export interface Loan {
-  id: string
-  contractLoanId: number | null
-  borrowerAddress: string
-  amount: string
-  purpose: string
-  duration: number
-  interestRate?: number
-  status: string
-  createdAt: string
-  lenderAddress?: string | null
-  fundedAt?: string | null
-  repaidAt?: string | null
+    id: string
+    contractLoanId: number | null
+    borrowerAddress: string
+    lenderAddress?: string | null
+    amount: string
+    interestRate: number
+    purpose: string
+    duration: number
+    status: 'REQUESTED' | 'FUNDED' | 'REPAID' | 'DEFAULTED'
+    createdAt: string
+    fundedAt?: string | null
+    repaidAt?: string | null
+    creationTx?: string | null
+    fundingTx?: string | null
+    repaymentTx?: string | null
 }
