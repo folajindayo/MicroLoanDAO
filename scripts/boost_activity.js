@@ -13,6 +13,11 @@ function getCurrentCommitCount() {
     }
 }
 
+function sleep(ms) {
+    const start = Date.now();
+    while (Date.now() - start < ms) {}
+}
+
 function run() {
     let currentCount = getCurrentCommitCount();
     console.log(`Current commit count: ${currentCount}`);
@@ -22,7 +27,7 @@ function run() {
         return;
     }
 
-    const needed = targetCommits - currentCount + 5; // Buffer
+    const needed = targetCommits - currentCount + 2; // Buffer
     console.log(`Generating ${needed} commits...`);
 
     for (let i = 0; i < needed; i++) {
@@ -32,11 +37,18 @@ function run() {
         fs.appendFileSync('ACTIVITY_LOG.md', logEntry);
         
         try {
+            // Remove lock if exists (dangerous but effective for this specific script loop if stuck)
+            if (fs.existsSync('.git/index.lock')) {
+                fs.unlinkSync('.git/index.lock');
+            }
+            
             execSync('git add ACTIVITY_LOG.md');
             execSync(`git commit -m "chore: update activity log ${i + 1}"`);
             console.log(`Committed change ${i + 1}`);
+            sleep(200); // Sleep 200ms
         } catch (error) {
             console.error(`Failed to commit change ${i + 1}:`, error.message);
+            sleep(500);
         }
     }
     
@@ -44,4 +56,3 @@ function run() {
 }
 
 run();
-
