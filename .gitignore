@@ -1,0 +1,9 @@
+node_modules
+.next
+.env
+artifacts
+cache
+typechain-types
+dev.db
+dev.db-journal
+
