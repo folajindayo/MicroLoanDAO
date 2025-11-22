@@ -12,8 +12,10 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             MicroLoan DAO
           </h1>
-          {/* @ts-expect-error w3m-button is a web component */}
-          <w3m-button />
+          <div className="rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
+            {/* @ts-expect-error w3m-button is a web component */}
+            <w3m-button />
+          </div>
         </div>
       </header>
 
