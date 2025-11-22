@@ -7,13 +7,13 @@ import LoanRequestForm from "@/components/LoanRequestForm";
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             MicroLoan DAO
           </h1>
-          <div className="rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
-            {/* @ts-expect-error w3m-button is a web component */}
+          <div className="flex items-center gap-4">
+             {/* @ts-expect-error w3m-button is a web component */}
             <w3m-button />
           </div>
         </div>
