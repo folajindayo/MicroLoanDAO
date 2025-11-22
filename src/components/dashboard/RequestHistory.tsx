@@ -1,15 +1,14 @@
 import { formatEther } from 'viem'
-import { Loan } from '@/types'
 
 interface RequestHistoryProps {
-  loans: Loan[]
-  onRepay: (loan: Loan) => void
-  isWritePending: boolean
-  repayingLoanId: string | null
+  loans: any[];
+  onRepay: (loan: any) => void;
+  isWritePending: boolean;
+  repayingLoanId: string | null;
 }
 
 export default function RequestHistory({ loans, onRepay, isWritePending, repayingLoanId }: RequestHistoryProps) {
-  if (!loans || loans.length === 0) {
+  if (loans.length === 0) {
     return <p className="text-gray-500 dark:text-gray-400">No loan requests made.</p>
   }
 
@@ -27,7 +26,7 @@ export default function RequestHistory({ loans, onRepay, isWritePending, repayin
               <button 
                 onClick={() => onRepay(loan)}
                 disabled={isWritePending}
-                className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 aria-label={`Repay loan for ${loan.purpose}`}
               >
                 {isWritePending && repayingLoanId === loan.id ? 'Processing...' : 'Repay'}
@@ -37,5 +36,5 @@ export default function RequestHistory({ loans, onRepay, isWritePending, repayin
         </li>
       ))}
     </ul>
-  )
+  );
 }
