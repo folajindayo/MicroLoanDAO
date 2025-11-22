@@ -11,6 +11,7 @@ interface Loan {
   contractLoanId: number | null
   borrowerAddress: string
   amount: string
+  interestRate: number
   purpose: string
   duration: number
   status: string
@@ -79,6 +80,9 @@ export default function LoanList() {
                 <dt className="mt-4 text-sm font-medium text-gray-500 truncate">Amount</dt>
                 <dd className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{formatEther(BigInt(loan.amount))} ETH</dd>
                 
+                <dt className="mt-4 text-sm font-medium text-gray-500 truncate">Interest Rate</dt>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">{loan.interestRate / 100}%</dd>
+
                 <dt className="mt-4 text-sm font-medium text-gray-500 truncate">Purpose</dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">{loan.purpose}</dd>
 
