@@ -1,13 +1,5 @@
 import { formatEther } from 'viem'
-
-interface Loan {
-  id: string
-  purpose: string
-  amount: string
-  status: string
-  interestRate?: number
-  contractLoanId?: number
-}
+import { Loan } from '@/types'
 
 interface RequestHistoryProps {
   loans: Loan[]
