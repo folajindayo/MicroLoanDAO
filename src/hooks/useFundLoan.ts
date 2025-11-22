@@ -5,6 +5,7 @@ import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
 import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
 import { useState } from 'react'
+import { Loan } from '@/types'
 
 export function useFundLoan() {
   const [fundingLoanId, setFundingLoanId] = useState<string | null>(null)
@@ -12,7 +13,7 @@ export function useFundLoan() {
   const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
   const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
-  const fundLoan = (loan: any, address: string) => {
+  const fundLoan = (loan: Loan, address: string) => {
      if (!loan.contractLoanId) {
          alert("Loan ID not synced with contract yet.")
          return
