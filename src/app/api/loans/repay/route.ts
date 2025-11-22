@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma';
-import { repayLoanSchema } from '@/lib/validation';
+import { repaySchema } from '@/lib/validation';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const result = repayLoanSchema.safeParse(body);
+    const result = repaySchema.safeParse(body);
 
     if (!result.success) {
       return errorResponse(result.error.message, 400);
