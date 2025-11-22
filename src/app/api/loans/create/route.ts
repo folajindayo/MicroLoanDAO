@@ -1,14 +1,17 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createLoanSchema } from '@/lib/validation';
+import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { borrowerAddress, amount, purpose, duration, interestRate, creationTx, contractLoanId } = body;
+    const result = createLoanSchema.safeParse(body);
 
-    if (!borrowerAddress || !amount || !purpose || !duration) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!result.success) {
+      return errorResponse(result.error.message, 400);
     }
+
+    const { borrowerAddress, amount, purpose, duration, interestRate, creationTx, contractLoanId } = result.data;
 
     // Create or update user
     await prisma.user.upsert({
@@ -20,19 +23,19 @@ export async function POST(request: Request) {
     const loan = await prisma.loan.create({
       data: {
         borrowerAddress,
-        amount: String(amount),
+        amount,
         purpose,
-        duration: Number(duration),
-        interestRate: Number(interestRate || 0), // Default to 0 if not provided
+        duration,
+        interestRate: interestRate ?? 0,
         status: 'REQUESTED',
         creationTx,
-        contractLoanId: contractLoanId ? Number(contractLoanId) : null,
+        contractLoanId: contractLoanId ?? null,
       },
     });
 
-    return NextResponse.json(loan);
+    return successResponse(loan);
   } catch (error) {
     console.error('Error creating loan:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return errorResponse('Internal Server Error');
   }
 }
