@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MicroLoan DAO
+
+Decentralized Microloan Platform powered by Next.js, Reown (WalletConnect), and Hardhat.
+
+## Features
+
+- **Wallet Connection**: Authenticate using Reown AppKit (WalletConnect).
+- **Request Loan**: Users can request ETH loans with specified terms.
+- **Fund Loan**: Community members can fund active loan requests.
+- **Repay Loan**: Borrowers can repay loans to increase reputation.
+- **Reputation System**: Track user reputation off-chain based on repayment history.
+- **Auto-Commit**: Dev tool to automatically commit changes.
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, NativeWind (Tailwind CSS), Wagmi, Reown AppKit.
+- **Backend**: Next.js API Routes, Prisma (SQLite).
+- **Blockchain**: Hardhat, Solidity (MicroLoanDAO contract).
 
 ## Getting Started
 
-First, run the development server:
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Database Setup**
+   ```bash
+   npx prisma migrate dev --name init
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Smart Contract**
+   - Compile:
+     ```bash
+     npx hardhat compile
+     ```
+   - Deploy (Localhost):
+     ```bash
+     npx hardhat node
+     # In new terminal
+     npx hardhat run scripts/deploy-contract.ts --network localhost
+     ```
+   - Update `MICROLOAN_CONTRACT_ADDRESS` in `.env` or `src/config/index.tsx`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Run App**
+   ```bash
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. **Auto-Commit Mode**
+   ```bash
+   npm run watch-commit
+   ```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+- `contracts/`: Solidity smart contracts.
+- `src/app/`: Next.js pages and API routes.
+- `src/components/`: React components.
+- `src/lib/`: Utilities (Prisma client).
+- `scripts/`: Automation scripts.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
