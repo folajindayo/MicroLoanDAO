@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
+import { UserProfile } from '@/types'
 
 export function useUserHistory() {
   const { address } = useAccount()
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
