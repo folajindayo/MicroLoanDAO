@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const address = searchParams.get('address');
 
   if (!address) {
-    return NextResponse.json({ error: 'Address is required' }, { status: 400 });
+    return errorResponse('Address is required', 400);
   }
 
   try {
@@ -23,13 +23,13 @@ export async function GET(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ reputationScore: 100, loans: [], fundedLoans: [] });
+      return successResponse({ reputationScore: 100, loans: [], fundedLoans: [] });
     }
 
-    return NextResponse.json(user);
+    return successResponse(user);
   } catch (error) {
     console.error('Error fetching history:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return errorResponse('Internal Server Error');
   }
 }
 
