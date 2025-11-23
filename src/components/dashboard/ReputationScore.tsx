@@ -1,3 +1,9 @@
+/**
+ * ReputationScore Component
+ * Displays the user's reputation score with visual styling.
+ * @param {Object} props - Component props
+ * @param {number} props.score - The reputation score to display
+ */
 interface ReputationScoreProps {
     score: number
 }
