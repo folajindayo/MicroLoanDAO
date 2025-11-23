@@ -12,6 +12,12 @@ interface FundedHistoryProps {
     loans: Loan[]
 }
 
+/**
+ * FundedHistory Component
+ * Lists loans that the user has funded.
+ * @param {Object} props - Component props
+ * @param {Loan[]} props.loans - Array of funded loans
+ */
 export default function FundedHistory({ loans }: FundedHistoryProps) {
     if (loans.length === 0) {
         return <p className="text-gray-500 dark:text-gray-400">No loans funded yet.</p>
