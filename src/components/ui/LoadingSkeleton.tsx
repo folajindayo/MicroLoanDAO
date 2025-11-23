@@ -1,3 +1,7 @@
+/**
+ * LoadingSkeleton Component
+ * Displays a placeholder UI while content is loading.
+ */
 export default function LoadingSkeleton() {
     return (
         <div className="animate-pulse space-y-4" role="status" aria-label="Loading">
