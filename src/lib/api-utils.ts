@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
-export function successResponse<T>(data: T, status = 200) {
-  return NextResponse.json(data, { status })
+export function successResponse<T>(data: T) {
+    return NextResponse.json(data);
 }
 
-export function errorResponse(message: string, status = 500) {
-  return NextResponse.json({ error: message }, { status })
+export function errorResponse(message: string, status: number = 500) {
+    return NextResponse.json({ error: message }, { status });
 }
