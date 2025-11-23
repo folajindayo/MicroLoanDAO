@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function GET() {
   try {
@@ -9,10 +9,10 @@ export async function GET() {
       include: { borrower: true },
     });
 
-    return NextResponse.json(loans);
+    return successResponse(loans);
   } catch (error) {
     console.error('Error fetching loans:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return errorResponse('Internal Server Error');
   }
 }
 
