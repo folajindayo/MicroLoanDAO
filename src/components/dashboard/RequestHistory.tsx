@@ -14,6 +14,13 @@ interface RequestHistoryProps {
     repayingLoanId: string | null
 }
 
+/**
+ * RequestHistory Component
+ * Lists loans requested by the user with repayment options.
+ * @param {Object} props - Component props
+ * @param {Loan[]} props.loans - Array of requested loans
+ * @param {Function} props.onRepay - Callback for repaying a loan
+ */
 export default function RequestHistory({ loans, onRepay, isWritePending, repayingLoanId }: RequestHistoryProps) {
     if (loans.length === 0) {
         return <p className="text-gray-500 dark:text-gray-400">No loan requests made.</p>
