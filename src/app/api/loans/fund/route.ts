@@ -1,14 +1,14 @@
 import { prisma } from '@/lib/prisma';
-import { fundSchema } from '@/lib/validation';
+import { fundLoanSchema } from '@/lib/validation';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const result = fundSchema.safeParse(body);
+    const result = fundLoanSchema.safeParse(body);
 
     if (!result.success) {
-      return errorResponse(result.error.message, 400);
+      return errorResponse(result.error.errors[0].message, 400);
     }
 
     const { loanId, lenderAddress, fundingTx } = result.data;
