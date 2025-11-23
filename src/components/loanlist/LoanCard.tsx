@@ -8,6 +8,13 @@ interface LoanCardProps {
     fundingLoanId: string | null
 }
 
+/**
+ * LoanCard Component
+ * Displays individual loan details and funding action.
+ * @param {Object} props - Component props
+ * @param {Object} props.loan - Loan data object
+ * @param {string} props.userAddress - Connected user's wallet address
+ */
 export default function LoanCard({ loan, userAddress, onFund, isWritePending, fundingLoanId }: LoanCardProps) {
     return (
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700 transition-shadow hover:shadow-md" role="article" aria-labelledby={`loan-title-${loan.id}`}>
