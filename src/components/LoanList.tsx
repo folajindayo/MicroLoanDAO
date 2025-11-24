@@ -1,4 +1,4 @@
-import LoadingSkeleton from '../ui/LoadingSkeleton'
+import LoadingSkeleton from './ui/LoadingSkeleton'
 import { useLoans } from '@/hooks/useLoans'
 import { useFundLoan } from '@/hooks/useFundLoan'
 import { useAccount } from 'wagmi'
