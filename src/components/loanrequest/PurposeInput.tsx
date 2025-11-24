@@ -15,8 +15,15 @@ export default function PurposeInput({ value, onChange }: PurposeInputProps) {
         placeholder="Business expansion..."
         required
         aria-required="true"
+        minLength={10}
+        maxLength={500}
+        rows={3}
       />
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+         {value.length}/500 characters
+      </p>
     </div>
   )
 }
+
 

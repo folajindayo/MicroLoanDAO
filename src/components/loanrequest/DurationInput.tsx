@@ -10,6 +10,8 @@ export default function DurationInput({ value, onChange }: DurationInputProps) {
       <input
         id="duration"
         type="number"
+        min="1"
+        max="365"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border text-gray-900 dark:bg-gray-700 dark:text-white dark:border-gray-600"
@@ -17,7 +19,9 @@ export default function DurationInput({ value, onChange }: DurationInputProps) {
         required
         aria-required="true"
       />
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Max: 365 days</p>
     </div>
   )
 }
+
 
