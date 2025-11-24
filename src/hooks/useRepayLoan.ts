@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
 import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
+import { Loan } from '@/types/loan'
 
 export function useRepayLoan() {
-    const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
-    const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
+    const { writeContract, data: hash, isPending: isWritePending, error: writeError } = useWriteContract()
+    const { isSuccess: isConfirmed, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
     const [repayingLoanId, setRepayingLoanId] = useState<string | null>(null)
 
     useEffect(() => {
@@ -17,26 +18,35 @@ export function useRepayLoan() {
                     loanId: repayingLoanId,
                     repaymentTx: hash
                 })
-            }).then(() => {
+            })
+            .then((res) => {
+                if (!res.ok) throw new Error('Failed to sync repayment')
                 setRepayingLoanId(null)
             })
+            .catch(console.error)
         }
     }, [isConfirmed, repayingLoanId, hash])
 
-    const repayLoan = (loan: any) => {
-        if (!loan.contractLoanId) {
-            alert("Contract Loan ID missing")
+    const repayLoan = (loan: Loan) => {
+        if (loan.contractLoanId === null || loan.contractLoanId === undefined) {
+            console.error("Contract Loan ID missing")
             return
         }
+        
         setRepayingLoanId(loan.id)
+        
+        // TODO: Calculate exact repayment amount including interest
+        const repaymentAmount = BigInt(loan.amount)
+
         writeContract({
             address: MICROLOAN_CONTRACT_ADDRESS as `0x${string}`,
             abi: MicroLoanDAOABI,
             functionName: 'repayLoan',
             args: [BigInt(loan.contractLoanId)],
-            value: BigInt(loan.amount) // Note: Contract calculates interest, value should ideally be calculated here too or fetched
+            value: repaymentAmount
         })
     }
 
-    return { repayLoan, isWritePending, repayingLoanId }
+    return { repayLoan, isWritePending, isConfirming, isConfirmed, repayingLoanId, writeError }
 }
+
