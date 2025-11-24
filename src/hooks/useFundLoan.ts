@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
 import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
+import { Loan } from '@/types/loan'
 
 export function useFundLoan() {
     const { address } = useAccount()
     const [fundingLoanId, setFundingLoanId] = useState<string | null>(null)
-    const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
-    const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
+    const { writeContract, data: hash, isPending: isWritePending, error: writeError } = useWriteContract()
+    const { isSuccess: isConfirmed, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+    const [dbError, setDbError] = useState<Error | null>(null)
 
     useEffect(() => {
         if (isConfirmed && fundingLoanId && hash && address) {
@@ -19,15 +21,22 @@ export function useFundLoan() {
                     lenderAddress: address,
                     fundingTx: hash
                 })
-            }).then(() => {
+            })
+            .then((res) => {
+                if (!res.ok) throw new Error('Failed to sync funding')
                 setFundingLoanId(null)
+                setDbError(null)
+            })
+            .catch((err) => {
+                console.error('DB Sync Error:', err)
+                setDbError(err)
             })
         }
     }, [isConfirmed, fundingLoanId, hash, address])
 
-    const fundLoan = (loan: any) => {
-        if (!loan.contractLoanId) {
-            alert("Loan ID not synced with contract yet.")
+    const fundLoan = (loan: Loan) => {
+        if (loan.contractLoanId === null || loan.contractLoanId === undefined) {
+            console.error("Loan ID not synced with contract yet.")
             return
         }
         setFundingLoanId(loan.id)
@@ -40,5 +49,6 @@ export function useFundLoan() {
         })
     }
 
-    return { fundLoan, isWritePending, fundingLoanId }
+    return { fundLoan, isWritePending, isConfirming, isConfirmed, fundingLoanId, writeError, dbError }
 }
+
