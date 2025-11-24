@@ -1,28 +1,21 @@
 import { useEffect, useState } from 'react'
-
-interface Loan {
-    id: string
-    contractLoanId: number | null
-    borrowerAddress: string
-    amount: string
-    purpose: string
-    duration: number
-    status: string
-    createdAt: string
-}
+import { Loan } from '@/types/loan'
 
 export function useLoans() {
     const [loans, setLoans] = useState<Loan[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<Error | null>(null)
 
     const fetchLoans = async () => {
         try {
             const res = await fetch('/api/loans')
+            if (!res.ok) {
+                throw new Error('Failed to fetch loans')
+            }
             const data = await res.json()
             setLoans(data)
         } catch (err: any) {
-            setError(err)
+            setError(err instanceof Error ? err : new Error('Unknown error occurred'))
         } finally {
             setIsLoading(false)
         }
@@ -34,3 +27,4 @@ export function useLoans() {
 
     return { loans, isLoading, error, refetch: fetchLoans }
 }
+
