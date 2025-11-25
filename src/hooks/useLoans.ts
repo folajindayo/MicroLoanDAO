@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+
 import { Loan } from '@/types/loan'
 
 export function useLoans() {
