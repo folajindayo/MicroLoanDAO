@@ -1,5 +1,5 @@
-import { formatEther } from 'viem'
 import { Loan } from '@/types'
+import { formatEther } from 'viem'
 
 interface FundedHistoryProps {
     loans: Loan[]
