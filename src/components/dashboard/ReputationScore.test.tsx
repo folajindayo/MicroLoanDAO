@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
 import ReputationScore from '@/components/dashboard/ReputationScore'
+import { render, screen } from '@testing-library/react'
 
 describe('ReputationScore', () => {
   it('renders the reputation score correctly', () => {
