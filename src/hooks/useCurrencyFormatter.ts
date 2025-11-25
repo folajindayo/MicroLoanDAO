@@ -1,5 +1,6 @@
-import { formatEther } from 'viem'
 import { useCallback } from 'react'
+
+import { formatEther } from 'viem'
 
 /**
  * Custom hook for formatting cryptocurrency values.
