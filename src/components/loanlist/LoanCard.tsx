@@ -1,7 +1,8 @@
-import LoanCardHeader from './LoanCardHeader'
+import { Loan } from '@/types/loan'
+
 import LoanCardBody from './LoanCardBody'
 import LoanCardFooter from './LoanCardFooter'
-import { Loan } from '@/types/loan'
+import LoanCardHeader from './LoanCardHeader'
 
 interface LoanCardProps {
     loan: Loan
