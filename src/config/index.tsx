@@ -1,7 +1,7 @@
-import { cookieStorage, createStorage } from 'wagmi'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-import { mainnet, arbitrum, sepolia, hardhat } from '@reown/appkit/networks'
+import { cookieStorage, createStorage } from 'wagmi'
 import { getProjectId, getContractAddress } from '@/lib/env'
+import { mainnet, arbitrum, sepolia, hardhat } from '@reown/appkit/networks'
 
 export const projectId = getProjectId()
 
