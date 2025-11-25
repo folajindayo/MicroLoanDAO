@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
+
 import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
 import { Loan } from '@/types/loan'
+import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 
 export function useRepayLoan() {
     const { writeContract, data: hash, isPending: isWritePending, error: writeError } = useWriteContract()
