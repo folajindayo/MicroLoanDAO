@@ -1,12 +1,14 @@
-import { useCreateLoan } from '@/hooks/useCreateLoan'
-import { useAccount } from 'wagmi'
 import { useState } from 'react'
-import { Toast } from './ui/Toast'
+
 import { CreateLoanSchema } from '@/lib/validation'
+import { useAccount } from 'wagmi'
+import { useCreateLoan } from '@/hooks/useCreateLoan'
+
 import AmountInput from './loanrequest/AmountInput'
 import DurationInput from './loanrequest/DurationInput'
 import InterestRateInput from './loanrequest/InterestRateInput'
 import PurposeInput from './loanrequest/PurposeInput'
+import { Toast } from './ui/Toast'
 
 export default function LoanRequestForm() {
   const { address } = useAccount()
