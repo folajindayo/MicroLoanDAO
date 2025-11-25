@@ -19,16 +19,16 @@ export default function LoanCardBody({ amount, purpose, duration, interestRate }
       
       <div>
         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Purpose</dt>
-        <dd className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2 leading-relaxed">
+        <dd className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2 leading-relaxed" title={purpose}>
           {purpose}
         </dd>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-2">
+      <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700 mt-3">
         <div>
           <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</dt>
           <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-200">
-            {Number(duration) / (24 * 60 * 60)} Days
+            {Math.round(Number(duration) / (24 * 60 * 60))} Days
           </dd>
         </div>
         {interestRate !== undefined && (
@@ -43,5 +43,6 @@ export default function LoanCardBody({ amount, purpose, duration, interestRate }
     </dl>
   )
 }
+
 
 
