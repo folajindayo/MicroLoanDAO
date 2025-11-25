@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { parseEther, decodeEventLog } from 'viem'
-import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
+
 import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
+import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
+import { parseEther, decodeEventLog } from 'viem'
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 
 interface CreateLoanParams {
     amount: string
