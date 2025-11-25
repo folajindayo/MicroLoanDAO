@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
-import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
+
 import MicroLoanDAOABI from '@/abi/MicroLoanDAO.json'
 import { Loan } from '@/types/loan'
+import { MICROLOAN_CONTRACT_ADDRESS } from '@/config'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 
 export function useFundLoan() {
     const { address } = useAccount()
