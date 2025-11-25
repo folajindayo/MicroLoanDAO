@@ -1,7 +1,8 @@
-import LoadingSkeleton from './ui/LoadingSkeleton'
-import { useLoans } from '@/hooks/useLoans'
-import { useFundLoan } from '@/hooks/useFundLoan'
 import { useAccount } from 'wagmi'
+import { useFundLoan } from '@/hooks/useFundLoan'
+import { useLoans } from '@/hooks/useLoans'
+
+import LoadingSkeleton from './ui/LoadingSkeleton'
 import LoanCard from './loanlist/LoanCard'
 
 export default function LoanList() {
