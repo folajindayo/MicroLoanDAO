@@ -9,32 +9,32 @@ interface LoanCardBodyProps {
 
 export default function LoanCardBody({ amount, purpose, duration, interestRate }: LoanCardBodyProps) {
   return (
-    <dl className="space-y-2">
+    <dl className="space-y-3">
       <div>
-        <dt className="text-xs text-gray-500 dark:text-gray-400">Amount</dt>
-        <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
-          {formatEther(BigInt(amount))} ETH
+        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</dt>
+        <dd className="mt-1 text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+          {formatEther(BigInt(amount))} <span className="text-sm font-normal text-gray-500">ETH</span>
         </dd>
       </div>
       
       <div>
-        <dt className="text-xs text-gray-500 dark:text-gray-400">Purpose</dt>
-        <dd className="text-sm text-gray-900 dark:text-gray-200 line-clamp-2">
+        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Purpose</dt>
+        <dd className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2 leading-relaxed">
           {purpose}
         </dd>
       </div>
 
-      <div className="flex justify-between">
+      <div className="grid grid-cols-2 gap-4 pt-2">
         <div>
-          <dt className="text-xs text-gray-500 dark:text-gray-400">Duration</dt>
-          <dd className="text-sm text-gray-900 dark:text-gray-200">
+          <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</dt>
+          <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-200">
             {Number(duration) / (24 * 60 * 60)} Days
           </dd>
         </div>
         {interestRate !== undefined && (
-          <div className="text-right">
-            <dt className="text-xs text-gray-500 dark:text-gray-400">Interest</dt>
-            <dd className="text-sm text-gray-900 dark:text-gray-200">
+          <div>
+            <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Interest</dt>
+            <dd className="mt-1 text-sm font-semibold text-green-600 dark:text-green-400 text-right">
               {interestRate / 100}%
             </dd>
           </div>
@@ -43,4 +43,5 @@ export default function LoanCardBody({ amount, purpose, duration, interestRate }
     </dl>
   )
 }
+
 
