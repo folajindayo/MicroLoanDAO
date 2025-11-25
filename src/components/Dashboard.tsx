@@ -1,10 +1,11 @@
+import { useAccount } from 'wagmi'
+import { useRepayLoan } from '@/hooks/useRepayLoan'
+import { useUserHistory } from '@/hooks/useUserHistory'
+
+import FundedHistory from './dashboard/FundedHistory'
 import LoadingSkeleton from './ui/LoadingSkeleton'
 import ReputationScore from './dashboard/ReputationScore'
 import RequestHistory from './dashboard/RequestHistory'
-import FundedHistory from './dashboard/FundedHistory'
-import { useUserHistory } from '@/hooks/useUserHistory'
-import { useRepayLoan } from '@/hooks/useRepayLoan'
-import { useAccount } from 'wagmi'
 
 export default function Dashboard() {
   const { address } = useAccount()
