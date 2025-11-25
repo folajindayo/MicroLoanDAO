@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { fundLoanSchema } from '@/lib/validation';
+import { prisma } from '@/lib/prisma';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
