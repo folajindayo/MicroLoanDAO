@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useAccount } from 'wagmi'
+
 import { User, Loan } from '@/types'
+import { useAccount } from 'wagmi'
 
 export function useUserHistory() {
     const { address } = useAccount()
