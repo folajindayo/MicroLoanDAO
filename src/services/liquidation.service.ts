@@ -1,360 +1,304 @@
 /**
  * Liquidation Service
- * Handle loan liquidations, auction processes, and collateral recovery
+ * Handle loan liquidation operations
  */
 
-import { formatEther, parseEther } from 'viem';
+import { type Address } from 'viem';
 
 export interface LiquidationCandidate {
-  loanId: string;
-  borrower: string;
-  lender: string;
+  loanId: bigint;
+  borrower: Address;
   collateralValue: bigint;
   debtValue: bigint;
   healthFactor: number;
+  collateralRatio: number;
   liquidationThreshold: number;
-  isLiquidatable: boolean;
-  bonus: number;
+  maxLiquidatableDebt: bigint;
+  liquidationBonus: number;
+  collateralAsset: string;
+  debtAsset: string;
+}
+
+export interface LiquidationParams {
+  loanId: bigint;
+  debtAmount: bigint;
+  liquidator: Address;
+  receiveCollateral: boolean;
 }
 
 export interface LiquidationResult {
-  loanId: string;
-  liquidator: string;
-  collateralSeized: bigint;
+  loanId: bigint;
   debtRepaid: bigint;
-  bonus: bigint;
+  collateralReceived: bigint;
+  liquidationBonus: bigint;
+  transactionHash: string;
   timestamp: Date;
-  transactionHash?: string;
-}
-
-export interface AuctionState {
-  loanId: string;
-  startTime: Date;
-  endTime: Date;
-  startingPrice: bigint;
-  currentPrice: bigint;
-  minimumPrice: bigint;
-  highestBidder?: string;
-  highestBid?: bigint;
-  status: 'active' | 'completed' | 'cancelled';
 }
 
 export interface LiquidationConfig {
   liquidationThreshold: number;
   liquidationBonus: number;
-  auctionDuration: number;
-  priceDecayRate: number;
-  minBidIncrement: number;
+  maxLiquidationRatio: number;
+  protocolFee: number;
   gracePeriod: number;
 }
 
-// Default configuration
-const DEFAULT_CONFIG: LiquidationConfig = {
-  liquidationThreshold: 130, // 130% collateral ratio
-  liquidationBonus: 5, // 5% bonus for liquidators
-  auctionDuration: 86400, // 24 hours
-  priceDecayRate: 1, // 1% per hour
-  minBidIncrement: 1, // 1% minimum bid increment
-  gracePeriod: 3600, // 1 hour grace period
-};
-
-// In-memory auction store
-const auctions: Map<string, AuctionState> = new Map();
-const liquidationHistory: LiquidationResult[] = [];
+export interface LiquidationAuction {
+  id: string;
+  loanId: bigint;
+  collateralAmount: bigint;
+  startingPrice: bigint;
+  currentPrice: bigint;
+  minPrice: bigint;
+  duration: number;
+  startTime: Date;
+  endTime: Date;
+  highestBidder?: Address;
+  status: 'active' | 'completed' | 'cancelled';
+}
 
 class LiquidationService {
-  private config: LiquidationConfig;
+  private config: LiquidationConfig = {
+    liquidationThreshold: 150, // 150% collateral ratio
+    liquidationBonus: 5, // 5% bonus for liquidators
+    maxLiquidationRatio: 50, // Can liquidate up to 50% of debt
+    protocolFee: 1, // 1% protocol fee
+    gracePeriod: 24 * 60 * 60, // 24 hours grace period
+  };
 
-  constructor(config: Partial<LiquidationConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
-  }
+  private liquidations: Map<string, LiquidationResult> = new Map();
+  private auctions: Map<string, LiquidationAuction> = new Map();
 
-  /**
-   * Check if a loan is liquidatable
-   */
-  isLiquidatable(
-    collateralValue: bigint,
-    debtValue: bigint,
-    threshold?: number
-  ): boolean {
-    if (debtValue === BigInt(0)) return false;
-    
-    const effectiveThreshold = threshold || this.config.liquidationThreshold;
-    const ratio = (Number(collateralValue) / Number(debtValue)) * 100;
-    return ratio < effectiveThreshold;
-  }
-
-  /**
-   * Calculate health factor
-   */
-  calculateHealthFactor(collateralValue: bigint, debtValue: bigint): number {
-    if (debtValue === BigInt(0)) return Infinity;
-    return (Number(collateralValue) / Number(debtValue)) * 100;
-  }
-
-  /**
-   * Get liquidation candidates
-   */
   async getLiquidationCandidates(): Promise<LiquidationCandidate[]> {
-    // In production, fetch from database/blockchain
-    try {
-      const response = await fetch('/api/loans/at-risk');
-      if (response.ok) {
-        const loans = await response.json();
-        return loans.map((loan: any) => this.evaluateLiquidationCandidate(loan));
-      }
-    } catch (error) {
-      console.error('Failed to fetch liquidation candidates:', error);
-    }
-    return [];
+    // In production, fetch from blockchain/indexer
+    const mockCandidates: LiquidationCandidate[] = [
+      {
+        loanId: BigInt(1),
+        borrower: '0x1234567890123456789012345678901234567890' as Address,
+        collateralValue: BigInt('1400000000000000000'), // 1.4 ETH
+        debtValue: BigInt('1000000000'), // 1000 USDC
+        healthFactor: 0.98,
+        collateralRatio: 140,
+        liquidationThreshold: 150,
+        maxLiquidatableDebt: BigInt('500000000'),
+        liquidationBonus: 5,
+        collateralAsset: 'ETH',
+        debtAsset: 'USDC',
+      },
+    ];
+
+    return mockCandidates.filter(c => c.healthFactor < 1);
   }
 
-  /**
-   * Evaluate a single loan for liquidation
-   */
-  evaluateLiquidationCandidate(loan: {
-    id: string;
-    borrower: string;
-    lender: string;
-    collateralValue: string;
-    debtValue: string;
-  }): LiquidationCandidate {
-    const collateralValue = BigInt(loan.collateralValue);
-    const debtValue = BigInt(loan.debtValue);
-    const healthFactor = this.calculateHealthFactor(collateralValue, debtValue);
-    const isLiquidatable = this.isLiquidatable(collateralValue, debtValue);
+  async checkLiquidationEligibility(loanId: bigint): Promise<{
+    isEligible: boolean;
+    healthFactor: number;
+    reason?: string;
+  }> {
+    // In production, check on-chain
+    const candidate = (await this.getLiquidationCandidates())
+      .find(c => c.loanId === loanId);
+
+    if (!candidate) {
+      return {
+        isEligible: false,
+        healthFactor: 1.5,
+        reason: 'Loan not found or healthy',
+      };
+    }
+
+    const isEligible = candidate.healthFactor < 1;
 
     return {
-      loanId: loan.id,
-      borrower: loan.borrower,
-      lender: loan.lender,
-      collateralValue,
-      debtValue,
-      healthFactor: Math.round(healthFactor * 100) / 100,
-      liquidationThreshold: this.config.liquidationThreshold,
-      isLiquidatable,
-      bonus: this.config.liquidationBonus,
+      isEligible,
+      healthFactor: candidate.healthFactor,
+      reason: isEligible ? undefined : 'Health factor above threshold',
     };
   }
 
-  /**
-   * Calculate liquidation amounts
-   */
-  calculateLiquidationAmounts(
-    collateralValue: bigint,
-    debtValue: bigint
-  ): { collateralToSeize: bigint; debtToRepay: bigint; bonus: bigint } {
-    const bonus = (collateralValue * BigInt(this.config.liquidationBonus)) / BigInt(100);
-    const collateralToSeize = collateralValue;
-    const debtToRepay = debtValue;
+  async calculateLiquidationAmount(
+    loanId: bigint,
+    debtAmount: bigint
+  ): Promise<{
+    debtToRepay: bigint;
+    collateralToReceive: bigint;
+    bonus: bigint;
+    protocolFee: bigint;
+    netCollateral: bigint;
+  }> {
+    const candidate = (await this.getLiquidationCandidates())
+      .find(c => c.loanId === loanId);
+
+    if (!candidate) {
+      throw new Error('Loan not eligible for liquidation');
+    }
+
+    // Cap at max liquidatable amount
+    const maxLiquidatable = (candidate.debtValue * BigInt(this.config.maxLiquidationRatio)) / BigInt(100);
+    const debtToRepay = debtAmount > maxLiquidatable ? maxLiquidatable : debtAmount;
+
+    // Calculate collateral value
+    const collateralPrice = Number(candidate.collateralValue) / Number(candidate.debtValue);
+    const baseCollateral = BigInt(Math.floor(Number(debtToRepay) * collateralPrice));
+
+    // Add liquidation bonus
+    const bonus = (baseCollateral * BigInt(this.config.liquidationBonus)) / BigInt(100);
+    const protocolFee = (bonus * BigInt(this.config.protocolFee)) / BigInt(this.config.liquidationBonus);
 
     return {
-      collateralToSeize,
       debtToRepay,
+      collateralToReceive: baseCollateral + bonus,
       bonus,
+      protocolFee,
+      netCollateral: baseCollateral + bonus - protocolFee,
     };
   }
 
-  /**
-   * Initiate liquidation
-   */
-  async initiateLiquidation(
-    loanId: string,
-    liquidator: string
-  ): Promise<LiquidationResult | null> {
-    // Verify loan is liquidatable
-    const candidates = await this.getLiquidationCandidates();
-    const candidate = candidates.find(c => c.loanId === loanId);
-
-    if (!candidate || !candidate.isLiquidatable) {
-      throw new Error('Loan is not eligible for liquidation');
+  async executeLiquidation(params: LiquidationParams): Promise<LiquidationResult> {
+    const eligibility = await this.checkLiquidationEligibility(params.loanId);
+    
+    if (!eligibility.isEligible) {
+      throw new Error(`Loan not eligible: ${eligibility.reason}`);
     }
 
-    const { collateralToSeize, debtToRepay, bonus } = this.calculateLiquidationAmounts(
-      candidate.collateralValue,
-      candidate.debtValue
-    );
+    const calculation = await this.calculateLiquidationAmount(params.loanId, params.debtAmount);
+
+    // In production, execute blockchain transaction
+    await this.simulateBlockchainDelay();
 
     const result: LiquidationResult = {
-      loanId,
-      liquidator,
-      collateralSeized: collateralToSeize,
-      debtRepaid: debtToRepay,
-      bonus,
+      loanId: params.loanId,
+      debtRepaid: calculation.debtToRepay,
+      collateralReceived: calculation.netCollateral,
+      liquidationBonus: calculation.bonus,
+      transactionHash: `0x${Array.from({ length: 64 }, () => 
+        Math.floor(Math.random() * 16).toString(16)
+      ).join('')}`,
       timestamp: new Date(),
     };
 
-    // Store in history
-    liquidationHistory.push(result);
-
-    // In production, execute smart contract transaction
-    console.log('Liquidation initiated:', result);
-
+    this.liquidations.set(result.transactionHash, result);
     return result;
   }
 
-  /**
-   * Start Dutch auction for liquidation
-   */
-  startAuction(
-    loanId: string,
-    startingPrice: bigint,
-    minimumPrice: bigint
-  ): AuctionState {
-    if (auctions.has(loanId)) {
-      throw new Error('Auction already exists for this loan');
+  async startDutchAuction(loanId: bigint): Promise<LiquidationAuction> {
+    const candidate = (await this.getLiquidationCandidates())
+      .find(c => c.loanId === loanId);
+
+    if (!candidate) {
+      throw new Error('Loan not eligible for auction');
     }
 
+    const auctionId = `auction_${Date.now()}`;
     const now = new Date();
-    const auction: AuctionState = {
+    const duration = 6 * 60 * 60; // 6 hours
+
+    const auction: LiquidationAuction = {
+      id: auctionId,
       loanId,
+      collateralAmount: candidate.collateralValue,
+      startingPrice: candidate.collateralValue,
+      currentPrice: candidate.collateralValue,
+      minPrice: (candidate.collateralValue * BigInt(70)) / BigInt(100), // 70% minimum
+      duration,
       startTime: now,
-      endTime: new Date(now.getTime() + this.config.auctionDuration * 1000),
-      startingPrice,
-      currentPrice: startingPrice,
-      minimumPrice,
+      endTime: new Date(now.getTime() + duration * 1000),
       status: 'active',
     };
 
-    auctions.set(loanId, auction);
+    this.auctions.set(auctionId, auction);
     return auction;
   }
 
-  /**
-   * Get current auction price (Dutch auction decay)
-   */
-  getCurrentAuctionPrice(loanId: string): bigint {
-    const auction = auctions.get(loanId);
-    if (!auction || auction.status !== 'active') {
-      throw new Error('No active auction for this loan');
-    }
-
-    const now = Date.now();
-    const elapsed = (now - auction.startTime.getTime()) / 1000;
-    const hoursElapsed = elapsed / 3600;
-
-    // Calculate price decay
-    const decayMultiplier = Math.max(
-      0,
-      1 - (hoursElapsed * this.config.priceDecayRate) / 100
-    );
-
-    const currentPrice = BigInt(
-      Math.floor(Number(auction.startingPrice) * decayMultiplier)
-    );
-
-    // Ensure price doesn't go below minimum
-    return currentPrice > auction.minimumPrice ? currentPrice : auction.minimumPrice;
+  async getAuction(auctionId: string): Promise<LiquidationAuction | null> {
+    return this.auctions.get(auctionId) || null;
   }
 
-  /**
-   * Place bid in auction
-   */
-  placeBid(loanId: string, bidder: string, amount: bigint): boolean {
-    const auction = auctions.get(loanId);
-    if (!auction || auction.status !== 'active') {
-      throw new Error('No active auction for this loan');
-    }
+  async getActiveAuctions(): Promise<LiquidationAuction[]> {
+    return Array.from(this.auctions.values())
+      .filter(a => a.status === 'active');
+  }
 
-    const currentPrice = this.getCurrentAuctionPrice(loanId);
+  async placeBid(auctionId: string, bidder: Address, amount: bigint): Promise<boolean> {
+    const auction = this.auctions.get(auctionId);
     
-    // For Dutch auction, any bid at or above current price wins
-    if (amount >= currentPrice) {
-      auction.highestBidder = bidder;
-      auction.highestBid = amount;
-      auction.status = 'completed';
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Cancel auction (admin only)
-   */
-  cancelAuction(loanId: string): boolean {
-    const auction = auctions.get(loanId);
     if (!auction || auction.status !== 'active') {
-      return false;
+      throw new Error('Auction not active');
     }
 
-    auction.status = 'cancelled';
+    const currentPrice = this.calculateCurrentDutchPrice(auction);
+    
+    if (amount < currentPrice) {
+      throw new Error('Bid below current price');
+    }
+
+    // Complete auction
+    auction.status = 'completed';
+    auction.highestBidder = bidder;
+    auction.currentPrice = amount;
+    this.auctions.set(auctionId, auction);
+
     return true;
   }
 
-  /**
-   * Get auction state
-   */
-  getAuction(loanId: string): AuctionState | null {
-    return auctions.get(loanId) || null;
+  calculateCurrentDutchPrice(auction: LiquidationAuction): bigint {
+    const now = Date.now();
+    const elapsed = now - auction.startTime.getTime();
+    const totalDuration = auction.endTime.getTime() - auction.startTime.getTime();
+
+    if (elapsed >= totalDuration) {
+      return auction.minPrice;
+    }
+
+    const priceRange = auction.startingPrice - auction.minPrice;
+    const priceDrop = (priceRange * BigInt(elapsed)) / BigInt(totalDuration);
+
+    return auction.startingPrice - priceDrop;
   }
 
-  /**
-   * Get all active auctions
-   */
-  getActiveAuctions(): AuctionState[] {
-    return Array.from(auctions.values()).filter(a => a.status === 'active');
+  async getLiquidationHistory(
+    loanId?: bigint,
+    limit: number = 10
+  ): Promise<LiquidationResult[]> {
+    let results = Array.from(this.liquidations.values());
+
+    if (loanId !== undefined) {
+      results = results.filter(r => r.loanId === loanId);
+    }
+
+    return results
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
   }
 
-  /**
-   * Get liquidation history
-   */
-  getLiquidationHistory(limit: number = 50): LiquidationResult[] {
-    return liquidationHistory.slice(-limit);
+  async getProtocolStats(): Promise<{
+    totalLiquidations: number;
+    totalDebtRepaid: bigint;
+    totalCollateralSeized: bigint;
+    totalProtocolFees: bigint;
+  }> {
+    const liquidations = Array.from(this.liquidations.values());
+
+    return {
+      totalLiquidations: liquidations.length,
+      totalDebtRepaid: liquidations.reduce((sum, l) => sum + l.debtRepaid, BigInt(0)),
+      totalCollateralSeized: liquidations.reduce((sum, l) => sum + l.collateralReceived, BigInt(0)),
+      totalProtocolFees: BigInt(0), // Would calculate from history
+    };
   }
 
-  /**
-   * Get liquidation history for a specific loan
-   */
-  getLoanLiquidationHistory(loanId: string): LiquidationResult[] {
-    return liquidationHistory.filter(l => l.loanId === loanId);
+  updateConfig(newConfig: Partial<LiquidationConfig>): void {
+    this.config = { ...this.config, ...newConfig };
   }
 
-  /**
-   * Calculate maximum liquidatable amount
-   */
-  calculateMaxLiquidation(
-    collateralValue: bigint,
-    debtValue: bigint,
-    closeFactorPercent: number = 50
-  ): bigint {
-    // Close factor limits how much can be liquidated at once
-    const maxLiquidation = (debtValue * BigInt(closeFactorPercent)) / BigInt(100);
-    return maxLiquidation;
-  }
-
-  /**
-   * Get configuration
-   */
   getConfig(): LiquidationConfig {
     return { ...this.config };
   }
 
-  /**
-   * Update configuration (admin only)
-   */
-  updateConfig(updates: Partial<LiquidationConfig>): void {
-    this.config = { ...this.config, ...updates };
-  }
-
-  /**
-   * Format liquidation for display
-   */
-  formatLiquidation(result: LiquidationResult): {
-    collateralSeizedETH: string;
-    debtRepaidETH: string;
-    bonusETH: string;
-  } {
-    return {
-      collateralSeizedETH: formatEther(result.collateralSeized),
-      debtRepaidETH: formatEther(result.debtRepaid),
-      bonusETH: formatEther(result.bonus),
-    };
+  private async simulateBlockchainDelay(): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
   }
 }
 
-// Export singleton
 export const liquidationService = new LiquidationService();
-export { LiquidationService };
 export default liquidationService;
-
