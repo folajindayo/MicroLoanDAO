@@ -1,92 +1,88 @@
 /**
  * useLoanFilters Hook
- * Manages loan filtering state and logic
+ * Manage loan list filtering
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { Loan } from '@/types';
+
+export type LoanStatus = 
+  | 'all'
+  | 'pending'
+  | 'active'
+  | 'funded'
+  | 'repaying'
+  | 'completed'
+  | 'defaulted'
+  | 'liquidated';
+
+export type SortField = 
+  | 'createdAt'
+  | 'amount'
+  | 'interestRate'
+  | 'duration'
+  | 'collateralRatio'
+  | 'healthFactor';
+
+export type SortOrder = 'asc' | 'desc';
 
 export interface LoanFilters {
-  status: string[];
-  minAmount: number | null;
-  maxAmount: number | null;
-  minRate: number | null;
-  maxRate: number | null;
-  minDuration: number | null;
-  maxDuration: number | null;
-  borrower: string | null;
-  lender: string | null;
-  dateFrom: Date | null;
-  dateTo: Date | null;
+  status: LoanStatus;
+  minAmount?: number;
+  maxAmount?: number;
+  minInterestRate?: number;
+  maxInterestRate?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  minCollateralRatio?: number;
+  maxCollateralRatio?: number;
+  collateralType?: string;
+  borrower?: string;
+  lender?: string;
+  search?: string;
 }
 
-export interface LoanFiltersState {
+export interface SortConfig {
+  field: SortField;
+  order: SortOrder;
+}
+
+export interface UseLoanFiltersReturn {
   filters: LoanFilters;
-  activeFilterCount: number;
-  hasActiveFilters: boolean;
-}
-
-export interface UseLoanFiltersReturn extends LoanFiltersState {
+  sort: SortConfig;
   setFilter: <K extends keyof LoanFilters>(key: K, value: LoanFilters[K]) => void;
   setFilters: (filters: Partial<LoanFilters>) => void;
+  setSort: (field: SortField, order?: SortOrder) => void;
+  toggleSortOrder: () => void;
   resetFilters: () => void;
-  resetFilter: (key: keyof LoanFilters) => void;
-  toggleStatus: (status: string) => void;
-  applyFilters: (loans: Loan[]) => Loan[];
-  getFilterSummary: () => string;
+  hasActiveFilters: boolean;
+  activeFilterCount: number;
+  getFilterString: () => string;
+  applyFilters: <T extends Record<string, unknown>>(items: T[]) => T[];
 }
 
 const DEFAULT_FILTERS: LoanFilters = {
-  status: [],
-  minAmount: null,
-  maxAmount: null,
-  minRate: null,
-  maxRate: null,
-  minDuration: null,
-  maxDuration: null,
-  borrower: null,
-  lender: null,
-  dateFrom: null,
-  dateTo: null,
+  status: 'all',
 };
 
-/**
- * Count active filters
- */
-function countActiveFilters(filters: LoanFilters): number {
-  let count = 0;
-  
-  if (filters.status.length > 0) count++;
-  if (filters.minAmount !== null) count++;
-  if (filters.maxAmount !== null) count++;
-  if (filters.minRate !== null) count++;
-  if (filters.maxRate !== null) count++;
-  if (filters.minDuration !== null) count++;
-  if (filters.maxDuration !== null) count++;
-  if (filters.borrower !== null) count++;
-  if (filters.lender !== null) count++;
-  if (filters.dateFrom !== null) count++;
-  if (filters.dateTo !== null) count++;
-  
-  return count;
-}
+const DEFAULT_SORT: SortConfig = {
+  field: 'createdAt',
+  order: 'desc',
+};
 
-/**
- * Hook for managing loan filters
- */
 export function useLoanFilters(
-  initialFilters: Partial<LoanFilters> = {}
+  initialFilters: Partial<LoanFilters> = {},
+  initialSort: Partial<SortConfig> = {}
 ): UseLoanFiltersReturn {
   const [filters, setFiltersState] = useState<LoanFilters>({
     ...DEFAULT_FILTERS,
     ...initialFilters,
   });
 
-  // Calculate active filter count
-  const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
-  const hasActiveFilters = activeFilterCount > 0;
+  const [sort, setSort] = useState<SortConfig>({
+    ...DEFAULT_SORT,
+    ...initialSort,
+  });
 
-  // Set single filter
   const setFilter = useCallback(<K extends keyof LoanFilters>(
     key: K,
     value: LoanFilters[K]
@@ -94,141 +90,213 @@ export function useLoanFilters(
     setFiltersState(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  // Set multiple filters
   const setFilters = useCallback((newFilters: Partial<LoanFilters>) => {
     setFiltersState(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  // Reset all filters
-  const resetFilters = useCallback(() => {
-    setFiltersState(DEFAULT_FILTERS);
-  }, []);
-
-  // Reset single filter
-  const resetFilter = useCallback((key: keyof LoanFilters) => {
-    setFiltersState(prev => ({ ...prev, [key]: DEFAULT_FILTERS[key] }));
-  }, []);
-
-  // Toggle status filter
-  const toggleStatus = useCallback((status: string) => {
-    setFiltersState(prev => ({
-      ...prev,
-      status: prev.status.includes(status)
-        ? prev.status.filter(s => s !== status)
-        : [...prev.status, status],
+  const handleSetSort = useCallback((field: SortField, order?: SortOrder) => {
+    setSort(prev => ({
+      field,
+      order: order ?? (prev.field === field && prev.order === 'desc' ? 'asc' : 'desc'),
     }));
   }, []);
 
-  // Apply filters to loan array
-  const applyFilters = useCallback((loans: Loan[]): Loan[] => {
-    return loans.filter(loan => {
-      // Status filter
-      if (filters.status.length > 0 && !filters.status.includes(loan.status)) {
-        return false;
-      }
+  const toggleSortOrder = useCallback(() => {
+    setSort(prev => ({
+      ...prev,
+      order: prev.order === 'asc' ? 'desc' : 'asc',
+    }));
+  }, []);
 
-      // Amount range filter
-      const amount = Number(loan.amount);
-      if (filters.minAmount !== null && amount < filters.minAmount) {
-        return false;
-      }
-      if (filters.maxAmount !== null && amount > filters.maxAmount) {
-        return false;
-      }
+  const resetFilters = useCallback(() => {
+    setFiltersState(DEFAULT_FILTERS);
+    setSort(DEFAULT_SORT);
+  }, []);
 
-      // Interest rate range filter
-      const rate = Number(loan.interestRate);
-      if (filters.minRate !== null && rate < filters.minRate) {
-        return false;
-      }
-      if (filters.maxRate !== null && rate > filters.maxRate) {
-        return false;
-      }
-
-      // Duration range filter
-      const duration = Number(loan.duration);
-      if (filters.minDuration !== null && duration < filters.minDuration) {
-        return false;
-      }
-      if (filters.maxDuration !== null && duration > filters.maxDuration) {
-        return false;
-      }
-
-      // Borrower filter
-      if (filters.borrower && loan.borrower?.toLowerCase() !== filters.borrower.toLowerCase()) {
-        return false;
-      }
-
-      // Lender filter
-      if (filters.lender && loan.lender?.toLowerCase() !== filters.lender.toLowerCase()) {
-        return false;
-      }
-
-      // Date range filter
-      const loanDate = loan.createdAt ? new Date(loan.createdAt) : null;
-      if (loanDate) {
-        if (filters.dateFrom && loanDate < filters.dateFrom) {
-          return false;
-        }
-        if (filters.dateTo && loanDate > filters.dateTo) {
-          return false;
-        }
-      }
-
-      return true;
-    });
+  const hasActiveFilters = useMemo(() => {
+    const { status, ...otherFilters } = filters;
+    
+    if (status !== 'all') return true;
+    
+    return Object.values(otherFilters).some(value => 
+      value !== undefined && value !== '' && value !== null
+    );
   }, [filters]);
 
-  // Get human-readable filter summary
-  const getFilterSummary = useCallback((): string => {
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    
+    if (filters.status !== 'all') count++;
+    if (filters.minAmount !== undefined) count++;
+    if (filters.maxAmount !== undefined) count++;
+    if (filters.minInterestRate !== undefined) count++;
+    if (filters.maxInterestRate !== undefined) count++;
+    if (filters.minDuration !== undefined) count++;
+    if (filters.maxDuration !== undefined) count++;
+    if (filters.minCollateralRatio !== undefined) count++;
+    if (filters.maxCollateralRatio !== undefined) count++;
+    if (filters.collateralType) count++;
+    if (filters.borrower) count++;
+    if (filters.lender) count++;
+    if (filters.search) count++;
+
+    return count;
+  }, [filters]);
+
+  const getFilterString = useCallback((): string => {
     const parts: string[] = [];
 
-    if (filters.status.length > 0) {
-      parts.push(`Status: ${filters.status.join(', ')}`);
+    if (filters.status !== 'all') {
+      parts.push(`status:${filters.status}`);
+    }
+    if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
+      parts.push(`amount:${filters.minAmount ?? '0'}-${filters.maxAmount ?? '∞'}`);
+    }
+    if (filters.minInterestRate !== undefined || filters.maxInterestRate !== undefined) {
+      parts.push(`rate:${filters.minInterestRate ?? '0'}-${filters.maxInterestRate ?? '∞'}%`);
+    }
+    if (filters.search) {
+      parts.push(`search:"${filters.search}"`);
     }
 
-    if (filters.minAmount !== null || filters.maxAmount !== null) {
-      const min = filters.minAmount ?? 0;
-      const max = filters.maxAmount ?? '∞';
-      parts.push(`Amount: $${min} - $${max}`);
-    }
-
-    if (filters.minRate !== null || filters.maxRate !== null) {
-      const min = filters.minRate ?? 0;
-      const max = filters.maxRate ?? '∞';
-      parts.push(`Rate: ${min}% - ${max}%`);
-    }
-
-    if (filters.minDuration !== null || filters.maxDuration !== null) {
-      const min = filters.minDuration ?? 0;
-      const max = filters.maxDuration ?? '∞';
-      parts.push(`Duration: ${min} - ${max} days`);
-    }
-
-    if (filters.borrower) {
-      parts.push(`Borrower: ${filters.borrower.slice(0, 6)}...`);
-    }
-
-    if (filters.lender) {
-      parts.push(`Lender: ${filters.lender.slice(0, 6)}...`);
-    }
-
-    return parts.join(' | ') || 'No filters applied';
+    return parts.join(' ');
   }, [filters]);
+
+  const applyFilters = useCallback(<T extends Record<string, unknown>>(items: T[]): T[] => {
+    let filtered = [...items];
+
+    // Status filter
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(item => item.status === filters.status);
+    }
+
+    // Amount filters
+    if (filters.minAmount !== undefined) {
+      filtered = filtered.filter(item => {
+        const amount = Number(item.amount ?? item.principalAmount ?? 0);
+        return amount >= filters.minAmount!;
+      });
+    }
+    if (filters.maxAmount !== undefined) {
+      filtered = filtered.filter(item => {
+        const amount = Number(item.amount ?? item.principalAmount ?? 0);
+        return amount <= filters.maxAmount!;
+      });
+    }
+
+    // Interest rate filters
+    if (filters.minInterestRate !== undefined) {
+      filtered = filtered.filter(item => {
+        const rate = Number(item.interestRate ?? 0);
+        return rate >= filters.minInterestRate!;
+      });
+    }
+    if (filters.maxInterestRate !== undefined) {
+      filtered = filtered.filter(item => {
+        const rate = Number(item.interestRate ?? 0);
+        return rate <= filters.maxInterestRate!;
+      });
+    }
+
+    // Duration filters
+    if (filters.minDuration !== undefined) {
+      filtered = filtered.filter(item => {
+        const duration = Number(item.duration ?? 0);
+        return duration >= filters.minDuration!;
+      });
+    }
+    if (filters.maxDuration !== undefined) {
+      filtered = filtered.filter(item => {
+        const duration = Number(item.duration ?? 0);
+        return duration <= filters.maxDuration!;
+      });
+    }
+
+    // Collateral ratio filters
+    if (filters.minCollateralRatio !== undefined) {
+      filtered = filtered.filter(item => {
+        const ratio = Number(item.collateralRatio ?? 0);
+        return ratio >= filters.minCollateralRatio!;
+      });
+    }
+    if (filters.maxCollateralRatio !== undefined) {
+      filtered = filtered.filter(item => {
+        const ratio = Number(item.collateralRatio ?? 0);
+        return ratio <= filters.maxCollateralRatio!;
+      });
+    }
+
+    // Collateral type filter
+    if (filters.collateralType) {
+      filtered = filtered.filter(item => 
+        item.collateralType === filters.collateralType
+      );
+    }
+
+    // Address filters
+    if (filters.borrower) {
+      const borrowerLower = filters.borrower.toLowerCase();
+      filtered = filtered.filter(item => 
+        String(item.borrower ?? '').toLowerCase() === borrowerLower
+      );
+    }
+    if (filters.lender) {
+      const lenderLower = filters.lender.toLowerCase();
+      filtered = filtered.filter(item => 
+        String(item.lender ?? '').toLowerCase() === lenderLower
+      );
+    }
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(item => {
+        const searchableFields = [
+          item.id,
+          item.borrower,
+          item.lender,
+          item.collateralType,
+        ].filter(Boolean);
+        
+        return searchableFields.some(field => 
+          String(field).toLowerCase().includes(searchLower)
+        );
+      });
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      const aValue = a[sort.field];
+      const bValue = b[sort.field];
+
+      let comparison = 0;
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      } else if (aValue instanceof Date && bValue instanceof Date) {
+        comparison = aValue.getTime() - bValue.getTime();
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+
+      return sort.order === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [filters, sort]);
 
   return {
     filters,
-    activeFilterCount,
-    hasActiveFilters,
+    sort,
     setFilter,
     setFilters,
+    setSort: handleSetSort,
+    toggleSortOrder,
     resetFilters,
-    resetFilter,
-    toggleStatus,
+    hasActiveFilters,
+    activeFilterCount,
+    getFilterString,
     applyFilters,
-    getFilterSummary,
   };
 }
 
 export default useLoanFilters;
-
